@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS DZ | الزبائن</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="assets/logo.png" alt="POS DZ" class="sidebar-logo">
+            <h3>POS DZ</h3>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="sale.html"><i class="fas fa-shopping-cart"></i> <span>البيع</span></a></li>
+            <li><a href="inventory.html"><i class="fas fa-boxes"></i> <span>المخزون</span></a></li>
+            <li class="active"><a href="customers.html"><i class="fas fa-users"></i> <span>الزبائن</span></a></li>
+            <li><a href="suppliers.html"><i class="fas fa-truck"></i> <span>الموردين</span></a></li>
+            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> <span>التقارير</span></a></li>
+            <li><a href="settings.html"><i class="fas fa-cog"></i> <span>الإعدادات</span></a></li>
+            <li><a href="users.html"><i class="fas fa-user-cog"></i> <span>المستخدمين</span></a></li>
+            <li class="logout"><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> <span>خروج</span></a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">إدارة الزبائن</div>
+            <div class="datetime" id="datetime"></div>
+            <div class="user-info" id="userInfo"></div>
+        </div>
+
+        <div class="customers-container">
+            <div class="customers-header">
+                <button class="btn-primary" onclick="showAddCustomerModal()"><i class="fas fa-plus"></i> إضافة زبون</button>
+            </div>
+
+            <table class="data-table" id="customersTable">
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>رقم الهاتف</th>
+                        <th>العنوان</th>
+                        <th>إجمالي الدين</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="customersTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="customerModal" class="modal">
+        <div class="modal-content">
+            <h3>إضافة زبون</h3>
+            <form id="customerForm">
+                <input type="hidden" id="customerId">
+                <label>الاسم:</label>
+                <input type="text" id="customerName" required>
+                <label>رقم الهاتف:</label>
+                <input type="text" id="customerPhone" required>
+                <label>العنوان:</label>
+                <input type="text" id="customerAddress">
+                <button type="submit" class="btn-primary">حفظ</button>
+                <button type="button" class="btn-cancel" onclick="closeCustomerModal()">إلغاء</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let customers = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            loadCurrentUser();
+            loadCustomers();
+        });
+
+        function loadCustomers() {
+            customers = JSON.parse(localStorage.getItem('customers')) || [];
+            renderCustomers();
+        }
+
+        function renderCustomers() {
+            const tbody = document.getElementById('customersTableBody');
+            tbody.innerHTML = '';
+            customers.forEach(c => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${c.name}</td>
+                    <td>${c.phone}</td>
+                    <td>${c.address || ''}</td>
+                    <td>${c.totalDebt || 0}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editCustomer(${c.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn-delete" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+            });
+        }
+
+        function showAddCustomerModal() {
+            document.getElementById('customerId').value = '';
+            document.getElementById('customerForm').reset();
+            document.getElementById('customerModal').style.display = 'flex';
+        }
+
+        document.getElementById('customerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('customerId').value;
+            const customer = {
+                id: id ? parseInt(id) : Date.now(),
+                name: document.getElementById('customerName').value,
+                phone: document.getElementById('customerPhone').value,
+                address: document.getElementById('customerAddress').value,
+                totalDebt: 0
+            };
+
+            let customers = JSON.parse(localStorage.getItem('customers')) || [];
+            if (id) {
+                const index = customers.findIndex(c => c.id == id);
+                if (index !== -1) customers[index] = { ...customers[index], ...customer };
+            } else {
+                customers.push(customer);
+            }
+            localStorage.setItem('customers', JSON.stringify(customers));
+            closeCustomerModal();
+            loadCustomers();
+        });
+
+        function closeCustomerModal() {
+            document.getElementById('customerModal').style.display = 'none';
+        }
+
+        function editCustomer(id) {
+            const customer = customers.find(c => c.id === id);
+            if (customer) {
+                document.getElementById('customerId').value = customer.id;
+                document.getElementById('customerName').value = customer.name;
+                document.getElementById('customerPhone').value = customer.phone;
+                document.getElementById('customerAddress').value = customer.address || '';
+                document.getElementById('customerModal').style.display = 'flex';
+            }
+        }
+
+        function deleteCustomer(id) {
+            if (confirm('هل أنت متأكد من الحذف؟')) {
+                customers = customers.filter(c => c.id !== id);
+                localStorage.setItem('customers', JSON.stringify(customers));
+                loadCustomers();
+            }
+        }
+    </script>
+</body>
+</html>
