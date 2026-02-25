@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS DZ | الإعدادات</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="assets/logo.png" alt="POS DZ" class="sidebar-logo">
+            <h3>POS DZ</h3>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="sale.html"><i class="fas fa-shopping-cart"></i> <span>البيع</span></a></li>
+            <li><a href="inventory.html"><i class="fas fa-boxes"></i> <span>المخزون</span></a></li>
+            <li><a href="customers.html"><i class="fas fa-users"></i> <span>الزبائن</span></a></li>
+            <li><a href="suppliers.html"><i class="fas fa-truck"></i> <span>الموردين</span></a></li>
+            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> <span>التقارير</span></a></li>
+            <li class="active"><a href="settings.html"><i class="fas fa-cog"></i> <span>الإعدادات</span></a></li>
+            <li><a href="users.html"><i class="fas fa-user-cog"></i> <span>المستخدمين</span></a></li>
+            <li class="logout"><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> <span>خروج</span></a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">الإعدادات العامة</div>
+            <div class="datetime" id="datetime"></div>
+            <div class="user-info" id="userInfo"></div>
+        </div>
+
+        <div class="settings-container">
+            <div class="settings-tabs">
+                <button class="settings-tab-btn active" onclick="showSettingsTab('general')">البرنامج</button>
+                <button class="settings-tab-btn" onclick="showSettingsTab('store')">المتجر</button>
+                <button class="settings-tab-btn" onclick="showSettingsTab('printer')">الطباعة</button>
+                <button class="settings-tab-btn" onclick="showSettingsTab('system')">النظام</button>
+                <button class="settings-tab-btn" onclick="showSettingsTab('about')">حول</button>
+            </div>
+
+            <div id="general-settings" class="settings-content active">
+                <h3>إعدادات البرنامج</h3>
+                <label>صيغة التاريخ:</label>
+                <select id="dateFormat">
+                    <option value="dmy">يوم/شهر/سنة</option>
+                    <option value="mdy">شهر/يوم/سنة</option>
+                    <option value="ymd">سنة/شهر/يوم</option>
+                </select>
+                <label>رمز العملة:</label>
+                <input type="text" id="currency" value="دج">
+                <label>اللغة:</label>
+                <select id="language">
+                    <option value="ar">العربية</option>
+                    <option value="fr">الفرنسية</option>
+                    <option value="en">الإنجليزية</option>
+                </select>
+                <label>الوضع اللوني:</label>
+                <select id="theme">
+                    <option value="light">فاتح</option>
+                    <option value="dark">داكن</option>
+                </select>
+                <button class="btn-primary" onclick="saveGeneralSettings()">حفظ الإعدادات</button>
+            </div>
+
+            <div id="store-settings" class="settings-content">
+                <h3>إعدادات المتجر</h3>
+                <label>اسم المتجر:</label>
+                <input type="text" id="storeName">
+                <label>رقم الهاتف:</label>
+                <input type="text" id="storePhone">
+                <label>العنوان:</label>
+                <input type="text" id="storeAddress">
+                <label>رسالة ترحيب:</label>
+                <textarea id="welcomeMessage"></textarea>
+                <button class="btn-primary" onclick="saveStoreSettings()">حفظ الإعدادات</button>
+            </div>
+
+            <div id="printer-settings" class="settings-content">
+                <h3>إعدادات الطباعة</h3>
+                <label>رقم الفاتورة الحالي:</label>
+                <input type="number" id="invoiceNumber">
+                <label>الطابعة الافتراضية:</label>
+                <input type="text" id="defaultPrinter">
+                <label>مقاس الورق:</label>
+                <select id="paperSize">
+                    <option value="58mm">58 مم</option>
+                    <option value="80mm">80 مم</option>
+                    <option value="A4">A4</option>
+                </select>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="printLogo"> طباعة الشعار</label>
+                    <label><input type="checkbox" id="printStoreName"> طباعة اسم المتجر</label>
+                    <label><input type="checkbox" id="printPhone"> طباعة الهاتف</label>
+                    <label><input type="checkbox" id="printAddress"> طباعة العنوان</label>
+                    <label><input type="checkbox" id="printWelcome"> طباعة رسالة الترحيب</label>
+                    <label><input type="checkbox" id="printBarcode"> طباعة باركود الفاتورة</label>
+                </div>
+                <button class="btn-primary" onclick="savePrinterSettings()">حفظ الإعدادات</button>
+            </div>
+
+            <div id="system-settings" class="settings-content">
+                <h3>إعدادات النظام</h3>
+                <label><input type="checkbox" id="autoBackup"> تفعيل النسخ الاحتياطي التلقائي</label>
+                <button class="btn-danger" onclick="partialReset()">مسح جزئي (مبيعات، ديون)</button>
+                <button class="btn-danger" onclick="fullReset()">مسح كلي (جميع البيانات)</button>
+            </div>
+
+            <div id="about-settings" class="settings-content">
+                <h3>حول التطبيق</h3>
+                <p><strong>POS DZ</strong> - نظام نقاط البيع الذكي</p>
+                <p>الإصدار: 2.0.0</p>
+                <p>المطور: بوس ديزاد | ب.حمزة</p>
+                <p>واتساب: 0770044850</p>
+                <p>© 2026 جميع الحقوق محفوظة</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let settings = {};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            loadCurrentUser();
+            loadSettings();
+        });
+
+        function loadSettings() {
+            settings = JSON.parse(localStorage.getItem('settings')) || {
+                dateFormat: 'dmy',
+                currency: 'دج',
+                language: 'ar',
+                theme: 'light',
+                store: { name: '', phone: '', address: '', welcomeMessage: '' },
+                printer: {
+                    invoiceNumber: 1,
+                    defaultPrinter: '',
+                    paperSize: '80mm',
+                    printLogo: true,
+                    printStoreName: true,
+                    printPhone: true,
+                    printAddress: true,
+                    printWelcome: true,
+                    printBarcode: false
+                }
+            };
+            document.getElementById('dateFormat').value = settings.dateFormat;
+            document.getElementById('currency').value = settings.currency;
+            document.getElementById('language').value = settings.language;
+            document.getElementById('theme').value = settings.theme;
+            document.getElementById('storeName').value = settings.store.name;
+            document.getElementById('storePhone').value = settings.store.phone;
+            document.getElementById('storeAddress').value = settings.store.address;
+            document.getElementById('welcomeMessage').value = settings.store.welcomeMessage;
+            document.getElementById('invoiceNumber').value = settings.printer.invoiceNumber;
+            document.getElementById('defaultPrinter').value = settings.printer.defaultPrinter;
+            document.getElementById('paperSize').value = settings.printer.paperSize;
+            document.getElementById('printLogo').checked = settings.printer.printLogo;
+            document.getElementById('printStoreName').checked = settings.printer.printStoreName;
+            document.getElementById('printPhone').checked = settings.printer.printPhone;
+            document.getElementById('printAddress').checked = settings.printer.printAddress;
+            document.getElementById('printWelcome').checked = settings.printer.printWelcome;
+            document.getElementById('printBarcode').checked = settings.printer.printBarcode;
+        }
+
+        function showSettingsTab(tab) {
+            document.querySelectorAll('.settings-tab-btn').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.settings-content').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.settings-tab-btn[onclick="showSettingsTab('${tab}')"]`).classList.add('active');
+            document.getElementById(tab + '-settings').classList.add('active');
+        }
+
+        function saveGeneralSettings() {
+            settings.dateFormat = document.getElementById('dateFormat').value;
+            settings.currency = document.getElementById('currency').value;
+            settings.language = document.getElementById('language').value;
+            settings.theme = document.getElementById('theme').value;
+            localStorage.setItem('settings', JSON.stringify(settings));
+            alert('تم الحفظ');
+        }
+
+        function saveStoreSettings() {
+            settings.store.name = document.getElementById('storeName').value;
+            settings.store.phone = document.getElementById('storePhone').value;
+            settings.store.address = document.getElementById('storeAddress').value;
+            settings.store.welcomeMessage = document.getElementById('welcomeMessage').value;
+            localStorage.setItem('settings', JSON.stringify(settings));
+            alert('تم الحفظ');
+        }
+
+        function savePrinterSettings() {
+            settings.printer.invoiceNumber = parseInt(document.getElementById('invoiceNumber').value);
+            settings.printer.defaultPrinter = document.getElementById('defaultPrinter').value;
+            settings.printer.paperSize = document.getElementById('paperSize').value;
+            settings.printer.printLogo = document.getElementById('printLogo').checked;
+            settings.printer.printStoreName = document.getElementById('printStoreName').checked;
+            settings.printer.printPhone = document.getElementById('printPhone').checked;
+            settings.printer.printAddress = document.getElementById('printAddress').checked;
+            settings.printer.printWelcome = document.getElementById('printWelcome').checked;
+            settings.printer.printBarcode = document.getElementById('printBarcode').checked;
+            localStorage.setItem('settings', JSON.stringify(settings));
+            alert('تم الحفظ');
+        }
+
+        function partialReset() {
+            if (confirm('سيتم مسح المبيعات والديون. هل أنت متأكد؟')) {
+                localStorage.removeItem('sales');
+                localStorage.removeItem('debts');
+                localStorage.removeItem('debtPayments');
+                alert('تم المسح الجزئي');
+            }
+        }
+
+        function fullReset() {
+            if (confirm('تحذير: سيتم مسح جميع البيانات. هل أنت متأكد؟')) {
+                localStorage.clear();
+                const users = [{ id: 1, username: 'admin', password: 'admin123', role: 'Admin', fullName: 'المدير', isActive: true }];
+                localStorage.setItem('users', JSON.stringify(users));
+                alert('تم المسح الكلي، سيتم إعادة التوجيه للدخول');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
