@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS DZ | البيع</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- القائمة الجانبية -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="assets/logo.png" alt="POS DZ" class="sidebar-logo">
+            <h3>POS DZ</h3>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="active"><a href="sale.html"><i class="fas fa-shopping-cart"></i> <span>البيع</span></a></li>
+            <li><a href="inventory.html"><i class="fas fa-boxes"></i> <span>المخزون</span></a></li>
+            <li><a href="customers.html"><i class="fas fa-users"></i> <span>الزبائن</span></a></li>
+            <li><a href="suppliers.html"><i class="fas fa-truck"></i> <span>الموردين</span></a></li>
+            <li><a href="reports.html"><i class="fas fa-chart-bar"></i> <span>التقارير</span></a></li>
+            <li><a href="settings.html"><i class="fas fa-cog"></i> <span>الإعدادات</span></a></li>
+            <li><a href="users.html"><i class="fas fa-user-cog"></i> <span>المستخدمين</span></a></li>
+            <li class="logout"><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> <span>خروج</span></a></li>
+        </ul>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">واجهة البيع</div>
+            <div class="datetime" id="datetime"></div>
+            <div class="user-info" id="userInfo"></div>
+        </div>
+
+        <div class="pos-container">
+            <div class="welcome-header" id="welcomeHeader">
+                <h1>POS DZ</h1>
+                <p>نظام نقاط البيع الذكي</p>
+            </div>
+
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="productSearch" placeholder="ابحث باسم المنتج أو الباركود..." autocomplete="off">
+                <div id="searchResults" class="search-results"></div>
+            </div>
+
+            <table class="cart-table" id="cartTable">
+                <thead>
+                    <tr>
+                        <th>المنتج</th>
+                        <th>الكمية</th>
+                        <th>السعر</th>
+                        <th>المجموع</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="cartBody"></tbody>
+            </table>
+
+            <div class="pos-footer">
+                <div class="discount-section">
+                    <label>خصم نقدي:</label>
+                    <input type="number" id="discountAmount" placeholder="0" oninput="calculateTotal()">
+                    <span>دج</span>
+                    <div class="discount-percent">
+                        <label>نسبة:</label>
+                        <button onclick="applyDiscountPercent(1)">1%</button>
+                        <button onclick="applyDiscountPercent(2)">2%</button>
+                        <button onclick="applyDiscountPercent(3)">3%</button>
+                        <button onclick="applyDiscountPercent(4)">4%</button>
+                        <button onclick="applyDiscountPercent(5)">5%</button>
+                    </div>
+                </div>
+                <div class="total-display">
+                    <div>الأصناف: <span id="itemCount">0</span></div>
+                    <div>الإجمالي: <span id="totalAmount">0.00</span> دج</div>
+                </div>
+            </div>
+
+            <div class="pos-footer">
+                <div class="payment-section">
+                    <div class="paid-amount">
+                        <label>المدفوع:</label>
+                        <input type="number" id="paidAmount" placeholder="0" oninput="calculateChange()">
+                        <span>دج</span>
+                    </div>
+                    <div class="change-amount">
+                        <label>الباقي:</label>
+                        <span id="changeAmount">0.00</span> دج
+                    </div>
+                    <div class="customer-select">
+                        <select id="customerSelect">
+                            <option value="">زبون نقدي</option>
+                        </select>
+                    </div>
+                    <div class="debt-alert" id="debtAlert" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="debtMessage"></span>
+                    </div>
+                </div>
+                <div class="pos-actions">
+                    <button class="btn-pay" onclick="processPayment('full')"><i class="fas fa-check-circle"></i> تسديد كامل</button>
+                    <button class="btn-partial" onclick="processPayment('partial')"><i class="fas fa-percent"></i> دفع جزئي</button>
+                    <button class="btn-debt" onclick="processPayment('debt')"><i class="fas fa-hand-holding-usd"></i> دين</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة الدفع الجزئي -->
+    <div id="partialPaymentModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>دفع جزئي</h3>
+            <p>المبلغ المتبقي سيسجل كدين على الزبون</p>
+            <label>المبلغ المدفوع الآن:</label>
+            <input type="number" id="partialAmount" class="form-control">
+            <div style="margin-top: 15px;">
+                <button class="btn-primary" onclick="confirmPartialPayment()">تأكيد</button>
+                <button class="btn-cancel" onclick="closeModal('partialPaymentModal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة خيارات التسديد -->
+    <div id="paymentOptionsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>خيارات التسديد</h3>
+            <button class="btn-print" onclick="printAndClose()"><i class="fas fa-print"></i> طباعة الفاتورة</button>
+            <button class="btn-close-only" onclick="completeSale('full')">إغلاق بدون طباعة</button>
+            <button class="btn-cancel" onclick="closeModal('paymentOptionsModal')">إلغاء</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let cart = [];
+        let currentDiscount = 0;
+        let currentDiscountPercent = 0;
+        let products = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            loadCurrentUser();
+            loadProductsFromStorage();
+            loadCustomerSelect();
+            renderCart();
+        });
+
+        function loadProductsFromStorage() {
+            products = JSON.parse(localStorage.getItem('products')) || [];
+        }
+
+        document.getElementById('productSearch').addEventListener('input', function(e) {
+            const search = e.target.value.toLowerCase().trim();
+            if (search.length < 1) {
+                document.getElementById('searchResults').style.display = 'none';
+                return;
+            }
+            const results = products.filter(p => 
+                p.name.toLowerCase().includes(search) || (p.barcode && p.barcode.includes(search))
+            ).slice(0, 5);
+            const resultsDiv = document.getElementById('searchResults');
+            if (results.length > 0) {
+                let html = '';
+                results.forEach(p => {
+                    html += `<div onclick="addToCart(${p.id})">${p.name} - ${p.price} دج</div>`;
+                });
+                resultsDiv.innerHTML = html;
+                resultsDiv.style.display = 'block';
+            } else {
+                resultsDiv.style.display = 'none';
+            }
+        });
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            const existing = cart.find(item => item.id === productId);
+            if (existing) {
+                existing.quantity++;
+                existing.total = existing.quantity * existing.price;
+            } else {
+                cart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: 1,
+                    total: product.price
+                });
+            }
+            document.getElementById('productSearch').value = '';
+            document.getElementById('searchResults').style.display = 'none';
+            renderCart();
+        }
+
+        function renderCart() {
+            const tbody = document.getElementById('cartBody');
+            const welcomeHeader = document.getElementById('welcomeHeader');
+            if (cart.length === 0) {
+                welcomeHeader.style.display = 'block';
+                tbody.innerHTML = '';
+                document.getElementById('itemCount').innerText = '0';
+                document.getElementById('totalAmount').innerText = '0.00';
+                return;
+            }
+            welcomeHeader.style.display = 'none';
+            let html = '';
+            cart.forEach((item, index) => {
+                html += `
+                    <tr>
+                        <td contenteditable="true" onblur="updateItemName(${index}, this.innerText)">${item.name}</td>
+                        <td>
+                            <button class="qty-btn" onclick="updateQuantity(${index}, -1)">-</button>
+                            <span class="qty-value">${item.quantity}</span>
+                            <button class="qty-btn" onclick="updateQuantity(${index}, 1)">+</button>
+                        </td>
+                        <td contenteditable="true" onblur="updatePrice(${index}, this.innerText)">${item.price}</td>
+                        <td>${item.total.toFixed(2)}</td>
+                        <td><button class="remove-btn" onclick="removeFromCart(${index})"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+            calculateTotal();
+        }
+
+        function updateQuantity(index, delta) {
+            const item = cart[index];
+            const newQty = item.quantity + delta;
+            if (newQty > 0) {
+                item.quantity = newQty;
+                item.total = item.quantity * item.price;
+            } else {
+                cart.splice(index, 1);
+            }
+            renderCart();
+        }
+
+        function updatePrice(index, priceText) {
+            const price = parseFloat(priceText) || 0;
+            cart[index].price = price;
+            cart[index].total = cart[index].quantity * price;
+            renderCart();
+        }
+
+        function updateItemName(index, name) {
+            if (name.trim()) cart[index].name = name;
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        function calculateTotal() {
+            const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+            const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+            let total = subtotal - discount;
+            if (currentDiscountPercent > 0) total = subtotal * (1 - currentDiscountPercent / 100);
+            document.getElementById('itemCount').innerText = cart.length;
+            document.getElementById('totalAmount').innerText = total.toFixed(2);
+            calculateChange();
+        }
+
+        function applyDiscountPercent(percent) {
+            currentDiscountPercent = percent;
+            document.getElementById('discountAmount').value = '';
+            calculateTotal();
+        }
+
+        function calculateChange() {
+            const total = parseFloat(document.getElementById('totalAmount').innerText) || 0;
+            const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+            const change = paid - total;
+            document.getElementById('changeAmount').innerText = change.toFixed(2);
+            const debtAlert = document.getElementById('debtAlert');
+            if (paid > 0 && paid < total) {
+                debtAlert.style.display = 'flex';
+                document.getElementById('debtMessage').innerText = `المتبقي: ${(total - paid).toFixed(2)} دج`;
+            } else {
+                debtAlert.style.display = 'none';
+            }
+        }
+
+        function loadCustomerSelect() {
+            const customers = JSON.parse(localStorage.getItem('customers')) || [];
+            const select = document.getElementById('customerSelect');
+            select.innerHTML = '<option value="">زبون نقدي</option>' + 
+                customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        function processPayment(type) {
+            if (cart.length === 0) {
+                alert('لا توجد منتجات في الفاتورة');
+                return;
+            }
+            const total = parseFloat(document.getElementById('totalAmount').innerText);
+            const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+            const customerId = document.getElementById('customerSelect').value;
+
+            if (type === 'full') {
+                if (paid < total) {
+                    alert('المبلغ المدفوع أقل من الإجمالي، استخدم الدفع الجزئي');
+                    return;
+                }
+                showPaymentOptions();
+            } else if (type === 'partial') {
+                if (!customerId) {
+                    alert('الرجاء اختيار زبون لتسجيل الدين');
+                    return;
+                }
+                document.getElementById('partialAmount').value = paid;
+                openModal('partialPaymentModal');
+            } else if (type === 'debt') {
+                if (!customerId) {
+                    alert('الرجاء اختيار زبون لتسجيل الدين');
+                    return;
+                }
+                completeSale('debt', total, 0, customerId);
+            }
+        }
+
+        function confirmPartialPayment() {
+            const partial = parseFloat(document.getElementById('partialAmount').value) || 0;
+            const total = parseFloat(document.getElementById('totalAmount').innerText);
+            const customerId = document.getElementById('customerSelect').value;
+            if (partial <= 0 || partial >= total) {
+                alert('المبلغ الجزئي يجب أن يكون أكبر من 0 وأقل من الإجمالي');
+                return;
+            }
+            completeSale('partial', total, partial, customerId);
+            closeModal('partialPaymentModal');
+        }
+
+        function completeSale(paymentType, total, paid, customerId) {
+            const sale = {
+                id: Date.now(),
+                invoiceNumber: generateInvoiceNumber(),
+                date: new Date().toISOString(),
+                customerId: customerId || null,
+                items: cart.map(item => ({ ...item })),
+                subtotal: cart.reduce((s, i) => s + i.total, 0),
+                discount: parseFloat(document.getElementById('discountAmount').value) || 0,
+                discountPercent: currentDiscountPercent,
+                total: total,
+                paid: paid,
+                paymentType: paymentType,
+                cashier: getCurrentUser().username
+            };
+
+            let sales = JSON.parse(localStorage.getItem('sales')) || [];
+            sales.push(sale);
+            localStorage.setItem('sales', JSON.stringify(sales));
+
+            updateStockAfterSale(cart);
+
+            if (paymentType !== 'full' && customerId) {
+                const remaining = paymentType === 'partial' ? total - paid : total;
+                createDebt(sale.id, customerId, remaining, paymentType === 'partial' ? paid : 0);
+            }
+
+            cart = [];
+            currentDiscount = 0;
+            currentDiscountPercent = 0;
+            document.getElementById('discountAmount').value = '';
+            document.getElementById('paidAmount').value = '';
+            renderCart();
+
+            if (paymentType === 'full') showPaymentOptions();
+            else alert('تمت العملية بنجاح');
+        }
+
+        function showPaymentOptions() {
+            openModal('paymentOptionsModal');
+        }
+
+        function printAndClose() {
+            printReceipt();
+            closeModal('paymentOptionsModal');
+        }
+
+        function printReceipt() {
+            const settings = JSON.parse(localStorage.getItem('settings')) || {};
+            const store = settings.store || {};
+            const total = document.getElementById('totalAmount').innerText;
+            let receiptContent = `
+                <html dir="rtl">
+                <head>
+                    <style>
+                        body { font-family: 'Tajawal', sans-serif; width: ${settings.printer?.paperSize || '80mm'}; padding: 10px; }
+                        .header { text-align: center; margin-bottom: 10px; }
+                        .items { width: 100%; border-collapse: collapse; }
+                        .items td { padding: 5px; }
+                        .total { font-weight: bold; margin-top: 10px; }
+                    </style>
+                </head>
+                <body>
+            `;
+            if (settings.printer?.printLogo) receiptContent += `<div class="header"><img src="assets/logo.png" width="100"></div>`;
+            if (settings.printer?.printStoreName) receiptContent += `<div class="header"><h2>${store.name || 'POS DZ'}</h2></div>`;
+            if (settings.printer?.printPhone) receiptContent += `<div class="header">هاتف: ${store.phone || ''}</div>`;
+            if (settings.printer?.printAddress) receiptContent += `<div class="header">العنوان: ${store.address || ''}</div>`;
+            receiptContent += `<div class="header">${new Date().toLocaleString('ar-DZ')}</div><hr>`;
+            receiptContent += `<table class="items">`;
+            cart.forEach(item => {
+                receiptContent += `<tr><td>${item.name}</td><td>${item.quantity}</td><td>${item.price}</td><td>${item.total}</td></tr>`;
+            });
+            receiptContent += `</table><hr><div class="total">الإجمالي: ${total} دج</div>`;
+            if (settings.printer?.printWelcome) receiptContent += `<div class="header">${store.welcomeMessage || 'شكراً لزيارتكم'}</div>`;
+            receiptContent += `</body></html>`;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(receiptContent);
+            printWindow.print();
+        }
+
+        function generateInvoiceNumber() {
+            let last = parseInt(localStorage.getItem('lastInvoiceNumber')) || 0;
+            last++;
+            localStorage.setItem('lastInvoiceNumber', last);
+            return String(last).padStart(5, '0');
+        }
+
+        function updateStockAfterSale(cart) {
+            let products = JSON.parse(localStorage.getItem('products')) || [];
+            cart.forEach(item => {
+                const prod = products.find(p => p.id === item.id);
+                if (prod) prod.quantity -= item.quantity;
+            });
+            localStorage.setItem('products', JSON.stringify(products));
+        }
+
+        function createDebt(saleId, customerId, amount, paid = 0) {
+            const debt = {
+                id: Date.now(),
+                saleId: saleId,
+                customerId: customerId,
+                amount: amount,
+                paid: paid,
+                remaining: amount,
+                dueDate: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+                status: 'مستحق',
+                createdAt: new Date().toISOString()
+            };
+            let debts = JSON.parse(localStorage.getItem('debts')) || [];
+            debts.push(debt);
+            localStorage.setItem('debts', JSON.stringify(debts));
+
+            let customers = JSON.parse(localStorage.getItem('customers')) || [];
+            const customer = customers.find(c => c.id == customerId);
+            if (customer) {
+                customer.totalDebt = (customer.totalDebt || 0) + amount;
+                localStorage.setItem('customers', JSON.stringify(customers));
+            }
+        }
+    </script>
+</body>
+</html>
